@@ -1,4 +1,20 @@
 {
-  "name": "RiskIntelligence",
-  "displayName": "RiskIntelligence"
+  "expo": {
+    "name": "RiskIntelligence",
+    "slug": "risk-intelligence",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "riskintelligence",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.riskintelligence.app"
+    },
+    "android": {
+      "package": "com.riskintelligence.app"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
 }
