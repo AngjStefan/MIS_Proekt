@@ -1,19 +1,17 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Post, SEVERITY_COLORS, SEVERITY_LABELS } from '@/types/post';
-import { colors, spacing, typography, borderRadius } from '@/theme/tokens';
+import { colors, spacing, borderRadius } from '@/theme/tokens';
 import { MaterialIcons } from '@expo/vector-icons';
 
-interface PostCardProps {
+interface PostPreviewCardProps {
   post: Post;
+  onClose: () => void;
   onUpvote?: () => void;
   onDownvote?: () => void;
-  onBookmark?: () => void;
-  isBookmarked?: boolean;
-  showBookmark?: boolean;
 }
 
-export function PostCard({ post, onUpvote, onDownvote, onBookmark, isBookmarked = false, showBookmark = false }: PostCardProps) {
+export function PostPreviewCard({ post, onClose, onUpvote, onDownvote }: PostPreviewCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -21,6 +19,10 @@ export function PostCard({ post, onUpvote, onDownvote, onBookmark, isBookmarked 
 
   return (
     <View style={styles.card}>
+      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <MaterialIcons name="close" size={20} color={colors.textSecondary} />
+      </TouchableOpacity>
+
       {post.imageUri && (
         <Image source={{ uri: post.imageUri }} style={styles.image} />
       )}
@@ -44,25 +46,14 @@ export function PostCard({ post, onUpvote, onDownvote, onBookmark, isBookmarked 
               {post.locationLabel}
             </Text>
           </View>
-          <View style={styles.actionsRow}>
-            <View style={styles.voteRow}>
-              <TouchableOpacity onPress={onDownvote} style={styles.voteButton}>
-                <MaterialIcons name="keyboard-arrow-down" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-              <Text style={styles.voteText}>{post.voteCount}</Text>
-              <TouchableOpacity onPress={onUpvote} style={styles.voteButton}>
-                <MaterialIcons name="keyboard-arrow-up" size={18} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-            {showBookmark && (
-              <TouchableOpacity onPress={onBookmark} style={styles.bookmarkButton}>
-                <MaterialIcons 
-                  name={isBookmarked ? "bookmark" : "bookmark-outline"} 
-                  size={20} 
-                  color={isBookmarked ? colors.primary : colors.textMuted} 
-                />
-              </TouchableOpacity>
-            )}
+          <View style={styles.voteRow}>
+            <TouchableOpacity onPress={onDownvote} style={styles.voteButton}>
+              <MaterialIcons name="keyboard-arrow-down" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+            <Text style={styles.voteText}>{post.voteCount}</Text>
+            <TouchableOpacity onPress={onUpvote} style={styles.voteButton}>
+              <MaterialIcons name="keyboard-arrow-up" size={18} color={colors.primary} />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -74,14 +65,22 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
+  closeButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: borderRadius.full,
+    padding: spacing.xs,
+  },
   image: {
     width: '100%',
-    height: 150,
+    height: 120,
   },
   content: {
     padding: spacing.md,
@@ -122,21 +121,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex:1,
+    flex: 1,
   },
   locationText: {
     color: colors.textSecondary,
     fontSize: 12,
     marginLeft: 4,
-    flex:1,
+    flex: 1,
   },
   voteRow: {
     flexDirection: 'row',
@@ -156,8 +150,5 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xs,
     minWidth: 24,
     textAlign: 'center',
-  },
-  bookmarkButton: {
-    padding: spacing.xs,
   },
 });

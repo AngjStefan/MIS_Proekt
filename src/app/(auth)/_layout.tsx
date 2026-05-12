@@ -1,22 +1,19 @@
 import { Stack, useRouter, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuth } from '../../providers/auth-provider';
-import { View, ActivityIndicator, Text, StyleSheet, Image } from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../theme/tokens';
 
 function SplashGate() {
   const { session, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading) {
-      if (session) {
-        router.replace('/app');
-      }
+    if (!loading && session) {
+      router.replace('/(app)/explore');
     }
-  }, [session, loading, router]);
+  }, [loading, session, router]);
 
   if (loading) {
     return (

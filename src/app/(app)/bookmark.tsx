@@ -1,30 +1,24 @@
-import React, { useEffect } from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React from 'react';
+import { View, FlatList, StyleSheet, Text, SafeAreaView } from 'react-native';
 import { usePosts } from '@/providers/posts-provider';
 import { PostCard } from '@/components/feed/PostCard';
 import { colors, spacing } from '@/theme/tokens';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function FeedTab() {
-  const { posts, upvotePost, downvotePost, toggleBookmark, isBookmarked, loadPosts } = usePosts();
-  const router = useRouter();
+export default function BookmarkTab() {
+  const { bookmarkedPosts, upvotePost, downvotePost } = usePosts();
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
-
-  if (posts.length === 0) {
+  if (bookmarkedPosts.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Feed</Text>
+          <Text style={styles.headerTitle}>Saved</Text>
         </View>
         <View style={styles.emptyState}>
-          <MaterialIcons name="feed" size={48} color={colors.textSecondary} />
-          <Text style={styles.emptyTitle}>No posts yet</Text>
+          <MaterialIcons name="bookmark-outline" size={48} color={colors.textSecondary} />
+          <Text style={styles.emptyTitle}>No bookmarks yet</Text>
           <Text style={styles.emptyDescription}>
-            Tap the + button to create your first report
+            Save posts to review them later
           </Text>
         </View>
       </SafeAreaView>
@@ -34,26 +28,18 @@ export default function FeedTab() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Feed</Text>
+        <Text style={styles.headerTitle}>Saved</Text>
       </View>
       <View style={styles.listWrapper}>
         <FlatList
-          data={posts}
+          data={bookmarkedPosts}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => router.push(`/(app)/post/${item.id}`)}
-            >
-              <PostCard
-                post={item}
-                onUpvote={() => upvotePost(item.id)}
-                onDownvote={() => downvotePost(item.id)}
-                onBookmark={() => toggleBookmark(item)}
-                isBookmarked={isBookmarked(item.id)}
-                showBookmark={true}
-              />
-            </TouchableOpacity>
+            <PostCard
+              post={item}
+              onUpvote={() => upvotePost(item.id)}
+              onDownvote={() => downvotePost(item.id)}
+            />
           )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

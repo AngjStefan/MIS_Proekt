@@ -2,6 +2,7 @@ export const TabIconNames = {
   explore: 'explore' as const,
   feed: 'feed' as const,
   create: 'add' as const,
+  bookmark: 'bookmark' as const,
   profile: 'person' as const,
 };
 

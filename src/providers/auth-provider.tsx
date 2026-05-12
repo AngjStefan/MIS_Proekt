@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { type Session, type User, type AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { router } from 'expo-router';
 
 interface AuthContextValue {
   session: Session | null;
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    router.replace('/(auth)/login');
   }, []);
 
   return (

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, Alert, ScrollView, Image, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/providers/auth-provider';
+import { usePosts } from '@/providers/posts-provider';
 import { colors, spacing, typography, borderRadius } from '@/theme/tokens';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
@@ -11,6 +12,7 @@ import { AppTextInput } from '@/components/ui/AppTextInput';
 export default function ProfileTab() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { posts } = usePosts();
 
   const [nickname, setNickname] = useState(user?.user_metadata?.full_name || '');
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -18,9 +20,11 @@ export default function ProfileTab() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const myPosts = posts.filter(p => p.authorId === user?.id);
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -55,8 +59,8 @@ export default function ProfileTab() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.profileHeader}>
         <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
           {profileImage ? (
             <Image source={{ uri: profileImage }} style={styles.avatar} />
@@ -71,54 +75,57 @@ export default function ProfileTab() {
         </TouchableOpacity>
 
         <Text style={styles.email}>{user?.email || 'No email'}</Text>
+        <Text style={styles.postCount}>{myPosts.length} reports submitted</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Profile Info</Text>
-        <AppTextInput
-          label="Nickname"
-          value={nickname}
-          onChangeText={setNickname}
-          placeholder="Enter nickname"
-        />
-      </View>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Profile Info</Text>
+          <AppTextInput
+            label="Nickname"
+            value={nickname}
+            onChangeText={setNickname}
+            placeholder="Enter nickname"
+          />
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Change Password</Text>
-        <AppTextInput
-          label="Current Password"
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          secureTextEntry
-          placeholder="Enter current password"
-        />
-        <AppTextInput
-          label="New Password"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          secureTextEntry
-          placeholder="Enter new password"
-        />
-        <AppTextInput
-          label="Confirm Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          placeholder="Confirm new password"
-        />
-        <PrimaryButton
-          title="Change Password"
-          onPress={handleChangePassword}
-        />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Change Password</Text>
+          <AppTextInput
+            label="Current Password"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry
+            placeholder="Enter current password"
+          />
+          <AppTextInput
+            label="New Password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            placeholder="Enter new password"
+          />
+          <AppTextInput
+            label="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            placeholder="Confirm new password"
+          />
+          <PrimaryButton
+            title="Change Password"
+            onPress={handleChangePassword}
+          />
+        </View>
 
-      <View style={styles.logoutSection}>
-        <PrimaryButton
-          title="Logout"
-          onPress={handleLogout}
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.logoutSection}>
+          <PrimaryButton
+            title="Logout"
+            onPress={handleLogout}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -127,10 +134,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
+  profileHeader: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl2,
+    paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
@@ -168,8 +175,21 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 16,
   },
+  postCount: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   section: {
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },

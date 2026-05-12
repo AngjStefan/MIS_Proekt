@@ -11,6 +11,7 @@ const TABS = [
   { name: 'explore', route: '/(app)/explore', iconName: TabIconNames.explore },
   { name: 'feed', route: '/(app)/feed', iconName: TabIconNames.feed },
   { name: 'create', route: '/(app)/create', iconName: TabIconNames.create },
+  { name: 'bookmark', route: '/(app)/bookmark', iconName: TabIconNames.bookmark },
   { name: 'profile', route: '/(app)/profile', iconName: TabIconNames.profile },
 ];
 

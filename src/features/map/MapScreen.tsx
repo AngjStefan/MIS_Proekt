@@ -1,16 +1,66 @@
-import { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet } from "react-native";
-import { WebView } from "react-native-webview";
+import { useRef, useCallback, useEffect, useState, useMemo } from "react";
+import { View, StyleSheet, Text } from "react-native";
 import { Post } from "@/types/post";
-import { colors } from "@/theme/tokens";
+import { colors, spacing } from "@/theme/tokens";
+
+interface Cluster {
+  center: { lat: number; lng: number };
+  count: number;
+  postIds: string[];
+}
 
 interface MapScreenProps {
   posts?: Post[];
   onMarkerPress?: (postId: string) => void;
+  onMapPress?: (lat: number, lng: number) => void;
   selectedPostId?: string | null;
 }
 
-const getMapHTML = (posts: Post[], selectedPostId: string | null) => `
+const CLUSTER_RADIUS_METERS = 300;
+
+function calculateClusters(posts: Post[]): Cluster[] {
+  const clusters: Cluster[] = [];
+  const processed = new Set<string>();
+
+  posts.forEach((post) => {
+    if (processed.has(post.id)) return;
+
+    const nearbyPosts = posts.filter((p) => {
+      if (processed.has(p.id)) return false;
+      const distance = getDistance(post.latitude, post.longitude, p.latitude, p.longitude);
+      return distance <= CLUSTER_RADIUS_METERS;
+    });
+
+    if (nearbyPosts.length >= 3) {
+      const centerLat = nearbyPosts.reduce((sum, p) => sum + p.latitude, 0) / nearbyPosts.length;
+      const centerLng = nearbyPosts.reduce((sum, p) => sum + p.longitude, 0) / nearbyPosts.length;
+      clusters.push({
+        center: { lat: centerLat, lng: centerLng },
+        count: nearbyPosts.length,
+        postIds: nearbyPosts.map((p) => p.id),
+      });
+      nearbyPosts.forEach((p) => processed.add(p.id));
+    }
+  });
+
+  return clusters;
+}
+
+function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+const getMapHTML = (posts: Post[], selectedPostId: string | null, clusters: Cluster[]) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,22 +70,6 @@ const getMapHTML = (posts: Post[], selectedPostId: string | null) => `
   <style>
     body { margin: 0; padding: 0; background: #0f172a; }
     #map { width: 100%; height: 100vh; }
-    .custom-marker {
-      background: ${colors.primary};
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 0 6px rgba(0,0,0,0.5);
-    }
-    .selected-marker {
-      background: #fff;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 3px solid ${colors.primary};
-      box-shadow: 0 0 10px ${colors.primary};
-    }
   </style>
 </head>
 <body>
@@ -44,96 +78,144 @@ const getMapHTML = (posts: Post[], selectedPostId: string | null) => `
     var map = L.map('map', {
       zoomControl: false,
       attributionControl: false
-    }).setView([41.9981, 21.4254], 12);
+    }).setView([41.9981, 21.4254], 14);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    var markers = {};
     var posts = ${JSON.stringify(posts)};
     var selectedId = ${JSON.stringify(selectedPostId)};
+    var clusters = ${JSON.stringify(clusters)};
+    var tempMarker = null;
 
-    function getSeverityColor(severity) {
-      var colors = {
+    function getColor(severity) {
+      var c = {
         'low': '#22C55E',
         'medium': '#F59E0B',
         'high': '#EF4444',
         'critical': '#DC2626'
       };
-      return colors[severity] || '#22C55E';
+      return c[severity] || '#22C55E';
     }
 
-    function createMarkerIcon(post, isSelected) {
-      var color = getSeverityColor(post.severity);
-      var size = isSelected ? 16 : 12;
-      var border = isSelected ? '3px solid ' + color : '2px solid white';
+    function createMarker(size, color, isSelected) {
       return L.divIcon({
         className: '',
-        html: '<div style="background: ' + (isSelected ? '#fff' : color) + '; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: ' + border + '; box-shadow: 0 0 ' + (isSelected ? '10px' : '6px') + ' rgba(0,0,0,0.5);"></div>',
+        html: '<div style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;border-radius:50%;border:' + (isSelected ? '3px solid #fff' : '2px solid white') + ';box-shadow:0 0 6px rgba(0,0,0,0.5);"></div>',
         iconSize: [size, size],
         iconAnchor: [size/2, size/2]
       });
     }
 
-    posts.forEach(function(post) {
-      var isSelected = selectedId === post.id;
-      var marker = L.marker([post.latitude, post.longitude], {
-        icon: createMarkerIcon(post, isSelected)
-      }).addTo(map);
-
-      marker.on('click', function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'markerPress',
-          postId: post.id
-        }));
+    function renderClusters() {
+      clusters.forEach(function(cluster) {
+        var circle = L.circle([cluster.center.lat, cluster.center.lng], {
+          radius: ${CLUSTER_RADIUS_METERS},
+          color: '#EF4444',
+          fillColor: '#EF4444',
+          fillOpacity: 0.25,
+          weight: 2,
+          opacity: 0.5
+        }).addTo(map);
+        
+        circle.bindPopup('<div style="text-align:center;color:white;background:rgba(0,0,0,0.7);padding:8px;border-radius:8px;"><strong>' + cluster.count + ' reports</strong><br><span style="font-size:12px;">in this area</span></div>');
       });
+    }
 
-      markers[post.id] = marker;
+    function renderPosts() {
+      posts.forEach(function(post) {
+        var isSelected = selectedId === post.id;
+        var color = getColor(post.severity);
+        var size = isSelected ? 16 : 12;
+        var icon = createMarker(size, isSelected ? '#fff' : color, isSelected);
+        var marker = L.marker([post.latitude, post.longitude], { icon: icon }).addTo(map);
+        marker.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'markerPress', postId: post.id }));
+        });
+      });
+    }
+
+    map.on('click', function(e) {
+      var lat = e.latlng.lat;
+      var lng = e.latlng.lng;
+      
+      if (tempMarker) {
+        map.removeLayer(tempMarker);
+      }
+      
+      tempMarker = L.circleMarker([lat, lng], {
+        radius: 12,
+        color: '#14B8A6',
+        fillColor: '#14B8A6',
+        fillOpacity: 1,
+        weight: 3
+      }).addTo(map);
+      
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapClick', lat: lat, lng: lng }));
     });
 
-    window.updateSelected = function(newSelectedId) {
-      Object.keys(markers).forEach(function(id) {
-        var post = posts.find(function(p) { return p.id === id; });
-        if (post) {
-          markers[id].setIcon(createMarkerIcon(post, id === newSelectedId));
-        }
-      });
-    };
+    renderClusters();
+    renderPosts();
   </script>
 </body>
 </html>
 `;
 
-export function MapScreen({ posts = [], onMarkerPress, selectedPostId = null }: MapScreenProps) {
-  const webViewRef = useRef<WebView>(null);
+export function MapScreen({ posts = [], onMarkerPress, onMapPress, selectedPostId = null }: MapScreenProps) {
+  const [WebViewComponent, setWebViewComponent] = useState<any>(null);
+  const [loadError, setLoadError] = useState(false);
+  const webViewRef = useRef<any>(null);
+  const [mapKey, setMapKey] = useState(0);
+
+  const clusters = useMemo(() => calculateClusters(posts), [posts]);
 
   useEffect(() => {
-    if (webViewRef.current && selectedPostId !== undefined) {
-      webViewRef.current.injectJavaScript(`window.updateSelected('${selectedPostId}'); true;`);
-    }
-  }, [selectedPostId]);
+    import('react-native-webview').then(module => {
+      setWebViewComponent(() => module.WebView);
+    }).catch(() => {
+      setLoadError(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    setMapKey(prev => prev + 1);
+  }, [posts, selectedPostId]);
 
   const handleMessage = useCallback((event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'markerPress' && onMarkerPress) {
         onMarkerPress(data.postId);
+      } else if (data.type === 'mapClick' && onMapPress) {
+        onMapPress(data.lat, data.lng);
       }
     } catch (e) {
-      console.log('Message parse error:', e);
+      console.warn('Message parse error:', e);
     }
-  }, [onMarkerPress]);
+  }, [onMarkerPress, onMapPress]);
+
+  if (loadError || !WebViewComponent) {
+    return (
+      <View style={styles.fallbackContainer}>
+        <Text style={styles.fallbackTitle}>Map Loading...</Text>
+        <Text style={styles.fallbackText}>Tap anywhere to add a pin</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <WebView
+      <WebViewComponent
+        key={mapKey}
         ref={webViewRef}
-        source={{ html: getMapHTML(posts, selectedPostId) }}
+        source={{ html: getMapHTML(posts, selectedPostId, clusters) }}
         style={styles.map}
         onMessage={handleMessage}
         originWhitelist={['*']}
         javaScriptEnabled
+        onError={() => setLoadError(true)}
       />
     </View>
   );
@@ -145,5 +227,23 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  fallbackContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  fallbackTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+  },
+  fallbackText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

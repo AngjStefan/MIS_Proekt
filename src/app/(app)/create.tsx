@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/providers/posts-provider';
 import { useAuth } from '@/providers/auth-provider';
@@ -14,6 +14,7 @@ const SEVERITY_OPTIONS = ['low', 'medium', 'high', 'critical'] as const;
 
 export default function CreatePostScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { addPost } = usePosts();
   const { user } = useAuth();
 
@@ -21,14 +22,24 @@ export default function CreatePostScreen() {
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
   const [locationLabel, setLocationLabel] = useState('');
-  const [latitude, setLatitude] = useState(41.9981);
-  const [longitude, setLongitude] = useState(21.4254);
+  const [latitude, setLatitude] = useState(() => params.latitude ? parseFloat(params.latitude as string) : 41.9981);
+  const [longitude, setLongitude] = useState(() => params.longitude ? parseFloat(params.longitude as string) : 21.4254);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setTitle('');
+    setDescription('');
+    setSeverity('medium');
+    setLocationLabel('');
+    setImageUri(null);
+    setLatitude(params.latitude ? parseFloat(params.latitude as string) : 41.9981);
+    setLongitude(params.longitude ? parseFloat(params.longitude as string) : 21.4254);
+  }, [params.latitude, params.longitude]);
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -39,7 +50,7 @@ export default function CreatePostScreen() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !description.trim() || !locationLabel.trim()) {
       Alert.alert('Missing fields', 'Please fill in all required fields');
       return;
@@ -47,23 +58,33 @@ export default function CreatePostScreen() {
 
     setLoading(true);
 
-    addPost({
-      title: title.trim(),
-      description: description.trim(),
-      latitude,
-      longitude,
-      locationLabel: locationLabel.trim(),
-      severity,
-      imageUri,
-      createdBy: user?.email || 'anonymous',
-    });
+    try {
+      await addPost({
+        title: title.trim(),
+        description: description.trim(),
+        latitude,
+        longitude,
+        locationLabel: locationLabel.trim(),
+        severity,
+        imageUri: imageUri ?? undefined,
+        authorId: user?.id || 'anonymous',
+      });
 
-    setLoading(false);
-    router.back();
+      setTitle('');
+      setDescription('');
+      setSeverity('medium');
+      setLocationLabel('');
+      setImageUri(null);
+    } catch (error) {
+      console.warn('Failed to create post:', error);
+    } finally {
+      setLoading(false);
+      router.back();
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
           <MaterialIcons name="close" size={24} color={colors.textPrimary} />
@@ -121,6 +142,13 @@ export default function CreatePostScreen() {
           placeholder="e.g. City Park, Main Street"
         />
 
+        <View style={styles.coordinatesContainer}>
+          <MaterialIcons name="my-location" size={16} color={colors.textMuted} />
+          <Text style={styles.coordinatesText}>
+            Lat: {latitude.toFixed(6)}, Lng: {longitude.toFixed(6)}
+          </Text>
+        </View>
+
         <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.imagePreview} />
@@ -138,7 +166,7 @@ export default function CreatePostScreen() {
           loading={loading}
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -170,6 +198,7 @@ const styles = StyleSheet.create({
   },
   formContent: {
     padding: spacing.lg,
+    paddingBottom: 120,
   },
   fieldContainer: {
     marginBottom: spacing.md,
@@ -227,6 +256,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
     marginTop: spacing.sm,
+  },
+  coordinatesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  coordinatesText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginLeft: spacing.xs,
   },
   submitButton: {
     marginTop: spacing.md,

@@ -53,7 +53,7 @@ export default function LoginScreen() {
         return;
       }
 
-      router.replace('/app');
+      router.replace('/(app)/explore');
     } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
