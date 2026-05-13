@@ -29,6 +29,8 @@ export const PasswordInput = forwardRef<TextInput, PasswordInputProps>(
             secureTextEntry={!visible}
             autoCapitalize="none"
             textContentType="password"
+            multiline={false}
+            numberOfLines={1}
             {...rest}
           />
           <TouchableOpacity
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: borderRadius.md,
-    minHeight: 52,
+    height: 52,
   },
   inputError: {
     borderColor: colors.error,
@@ -76,7 +78,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md - 2,
+    paddingVertical: 0,
+    height: '100%',
   },
   toggleButton: {
     paddingHorizontal: spacing.md,
