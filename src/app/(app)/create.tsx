@@ -9,13 +9,17 @@ import { colors, spacing, borderRadius } from '@/theme/tokens';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { AppTextInput } from '@/components/ui/AppTextInput';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { checkDuplicateReport } from '@/lib/gemini';
+import { getDistance } from '@/lib/utils';
+import { Post } from '@/types/post';
 
 const SEVERITY_OPTIONS = ['low', 'medium', 'high', 'critical'] as const;
 
 export default function CreatePostScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { addPost } = usePosts();
+  const { addPost, posts } = usePosts();
   const { user } = useAuth();
 
   const [title, setTitle] = useState('');
@@ -26,6 +30,8 @@ export default function CreatePostScreen() {
   const [longitude, setLongitude] = useState(() => params.longitude ? parseFloat(params.longitude as string) : 21.4254);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [duplicatePost, setDuplicatePost] = useState<Post | null>(null);
 
   useEffect(() => {
     setTitle('');
@@ -59,6 +65,40 @@ export default function CreatePostScreen() {
     setLoading(true);
 
     try {
+      // 1. Find nearby posts (within 500m)
+      const nearbyPosts = posts.filter((p) => {
+        const dist = getDistance(latitude, longitude, p.latitude, p.longitude);
+        return dist <= 500;
+      });
+
+      // 2. AI Duplicate Check
+      if (nearbyPosts.length > 0) {
+        const result = await checkDuplicateReport(
+          { title: title.trim(), description: description.trim() },
+          nearbyPosts
+        );
+
+        if (result.isDuplicate && result.duplicateId) {
+          const matchedPost = nearbyPosts.find(p => p.id === result.duplicateId);
+          if (matchedPost) {
+            setDuplicatePost(matchedPost);
+            setModalVisible(true);
+            setLoading(false);
+            return; // Stop here and wait for modal action
+          }
+        }
+      }
+
+      await executeSubmit();
+    } catch (error) {
+      console.warn('Failed to check duplicates:', error);
+      setLoading(false);
+    }
+  };
+
+  const executeSubmit = async () => {
+    setLoading(true);
+    try {
       await addPost({
         title: title.trim(),
         description: description.trim(),
@@ -75,11 +115,13 @@ export default function CreatePostScreen() {
       setSeverity('medium');
       setLocationLabel('');
       setImageUri(null);
+      setDuplicatePost(null);
+      setModalVisible(false);
+      router.back();
     } catch (error) {
       console.warn('Failed to create post:', error);
     } finally {
       setLoading(false);
-      router.back();
     }
   };
 
@@ -166,6 +208,19 @@ export default function CreatePostScreen() {
           loading={loading}
         />
       </ScrollView>
+
+      <ConfirmationModal
+        visible={modalVisible}
+        title="Possible Duplicate Found"
+        message="This may be a duplicate report. Are you sure you want to create this?"
+        postTitle={duplicatePost?.title}
+        postDescription={duplicatePost?.description}
+        confirmText="Create Anyway"
+        cancelText="Cancel"
+        onConfirm={executeSubmit}
+        onCancel={() => setModalVisible(false)}
+        loading={loading}
+      />
     </SafeAreaView>
   );
 }
