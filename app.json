@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "RiskIntelligence",
-    "slug": "risk-intelligence",
+    "name": "SafeParking",
+    "slug": "safe-parking",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
-    "scheme": "riskintelligence",
+    "userInterfaceStyle": "bright",
+    "scheme": "safeparking",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.riskintelligence.app"
+      "bundleIdentifier": "com.safeparking.app"
     },
     "android": {
-      "package": "com.riskintelligence.app"
+      "package": "com.safeparking.app"
     },
     "plugins": [
       "expo-router"
