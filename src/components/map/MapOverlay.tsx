@@ -11,18 +11,30 @@ export const MapOverlay = () => (
       paddingTop: 48,
       paddingHorizontal: 16,
       paddingBottom: 12,
-      backgroundColor: "rgba(24, 24, 27, 0.75)",
+      backgroundColor: "rgba(24, 24, 27, 0.85)",
       zIndex: 10,
     }}
   >
+    <View
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 16,
+        right: 16,
+        height: 2,
+        backgroundColor: colors.accent,
+        borderRadius: 1,
+      }}
+    />
     <Text
       style={{
-        color: colors.textPrimary,
-        fontSize: 16,
-        fontWeight: "600",
+        color: colors.accent,
+        fontSize: 18,
+        fontWeight: "700",
+        letterSpacing: 0.5,
       }}
     >
-      RiskIntelligence
+      SafeParking
     </Text>
   </View>
 );

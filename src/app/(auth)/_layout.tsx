@@ -21,12 +21,15 @@ function SplashGate() {
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <View style={styles.logoMark}>
-              <Text style={styles.logoText}>RI</Text>
+              <Text style={styles.logoText}>SP</Text>
             </View>
-            <Text style={styles.appName}>RiskIntelligence</Text>
-            <Text style={styles.tagline}>City safety, made visible</Text>
+            <View style={styles.titleWrapper}>
+              <Text style={styles.appName}>SafeParking</Text>
+              <View style={styles.accentBar} />
+            </View>
+            <Text style={styles.tagline}>Find safe parking, stay informed</Text>
           </View>
-          <ActivityIndicator color={colors.primary} size="large" style={styles.loader} />
+          <ActivityIndicator color={colors.accent} size="large" style={styles.loader} />
         </View>
       </SafeAreaView>
     );
@@ -67,16 +70,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.accent,
   },
   logoText: {
     ...typography.heading,
-    color: colors.black,
+    color: colors.accent,
     fontSize: 24,
+  },
+  titleWrapper: {
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   appName: {
     ...typography.heading,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  accentBar: {
+    width: 40,
+    height: 3,
+    backgroundColor: colors.accent,
+    borderRadius: 2,
   },
   tagline: {
     ...typography.body,

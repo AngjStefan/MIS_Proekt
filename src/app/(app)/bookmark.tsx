@@ -10,24 +10,32 @@ export default function BookmarkTab() {
 
   if (bookmarkedPosts.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Saved</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.brandRow}>
+          <Text style={styles.brandName}>SafeParking</Text>
+          <View style={styles.brandAccent} />
         </View>
-        <View style={styles.emptyState}>
-          <MaterialIcons name="bookmark-outline" size={48} color={colors.textSecondary} />
-          <Text style={styles.emptyTitle}>No bookmarks yet</Text>
-          <Text style={styles.emptyDescription}>
-            Save posts to review them later
-          </Text>
-        </View>
-      </SafeAreaView>
+        <Text style={styles.headerTitle}>Saved</Text>
+      </View>
+      <View style={styles.emptyState}>
+        <MaterialIcons name="bookmark-outline" size={48} color={colors.textSecondary} />
+        <Text style={styles.emptyTitle}>No bookmarks yet</Text>
+        <Text style={styles.emptyDescription}>
+          Save posts to review them later
+        </Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.brandRow}>
+          <Text style={styles.brandName}>SafeParking</Text>
+          <View style={styles.brandAccent} />
+        </View>
         <Text style={styles.headerTitle}>Saved</Text>
       </View>
       <View style={styles.listWrapper}>
@@ -56,10 +64,29 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  brandName: {
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  brandAccent: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
+    marginLeft: spacing.sm,
   },
   headerTitle: {
     color: colors.textPrimary,

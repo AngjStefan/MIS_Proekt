@@ -68,7 +68,7 @@ const getMapHTML = (posts: Post[], selectedPostId: string | null, clusters: Clus
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body { margin: 0; padding: 0; background: #0f172a; }
+    body { margin: 0; padding: 0; background: #f0f0f0; }
     #map { width: 100%; height: 100vh; }
   </style>
 </head>
@@ -80,7 +80,7 @@ const getMapHTML = (posts: Post[], selectedPostId: string | null, clusters: Clus
       attributionControl: false
     }).setView([41.9981, 21.4254], 14);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 

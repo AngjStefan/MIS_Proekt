@@ -60,6 +60,10 @@ export default function ProfileTab() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.brandBar}>
+        <Text style={styles.brandBarTitle}>SafeParking</Text>
+        <View style={styles.brandBarAccent} />
+      </View>
       <View style={styles.profileHeader}>
         <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
           {profileImage ? (
@@ -133,6 +137,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  brandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+  },
+  brandBarTitle: {
+    color: colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  brandBarAccent: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
+    marginLeft: spacing.sm,
   },
   profileHeader: {
     alignItems: 'center',

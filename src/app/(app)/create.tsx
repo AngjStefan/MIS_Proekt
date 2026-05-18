@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Image, SafeAreaView, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/providers/posts-provider';
@@ -32,6 +32,7 @@ export default function CreatePostScreen() {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [duplicatePost, setDuplicatePost] = useState<Post | null>(null);
+  const [photoModalVisible, setPhotoModalVisible] = useState(false);
 
   useEffect(() => {
     setTitle('');
@@ -43,14 +44,37 @@ export default function CreatePostScreen() {
     setLongitude(params.longitude ? parseFloat(params.longitude as string) : 21.4254);
   }, [params.latitude, params.longitude]);
 
-  const pickImage = async () => {
+  const pickFromGallery = async () => {
+    setPhotoModalVisible(false);
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission Required', 'We need access to your photo library to select images.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
+    if (!result.canceled && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
 
+  const takePhoto = async () => {
+    setPhotoModalVisible(false);
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission Required', 'We need access to your camera to take photos.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
     if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
     }
@@ -191,7 +215,7 @@ export default function CreatePostScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+        <TouchableOpacity style={styles.imagePicker} onPress={() => setPhotoModalVisible(true)}>
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.imagePreview} />
           ) : (
@@ -208,6 +232,38 @@ export default function CreatePostScreen() {
           loading={loading}
         />
       </ScrollView>
+
+      <Modal
+        transparent
+        visible={photoModalVisible}
+        animationType="fade"
+        onRequestClose={() => setPhotoModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.photoOverlay}
+          activeOpacity={1}
+          onPress={() => setPhotoModalVisible(false)}
+        >
+          <View style={styles.photoModal}>
+            <Text style={styles.photoModalTitle}>Add Photo</Text>
+            <TouchableOpacity style={styles.photoOption} onPress={takePhoto}>
+              <MaterialIcons name="camera-alt" size={24} color={colors.accent} />
+              <Text style={styles.photoOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+            <View style={styles.photoDivider} />
+            <TouchableOpacity style={styles.photoOption} onPress={pickFromGallery}>
+              <MaterialIcons name="photo-library" size={24} color={colors.accent} />
+              <Text style={styles.photoOptionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.photoCancel}
+              onPress={() => setPhotoModalVisible(false)}
+            >
+              <Text style={styles.photoCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <ConfirmationModal
         visible={modalVisible}
@@ -326,5 +382,50 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: spacing.md,
     marginBottom: spacing.xl,
+  },
+  photoOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+    padding: spacing.lg,
+  },
+  photoModal: {
+    backgroundColor: 'rgba(24, 24, 27, 0.95)',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(253, 190, 52, 0.2)',
+  },
+  photoModalTitle: {
+    color: colors.accent,
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  photoOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  photoOptionText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  photoDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  photoCancel: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+  },
+  photoCancelText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

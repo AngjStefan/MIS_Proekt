@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Post } from '@/types/post';
 import { supabase } from '@/lib/supabase';
@@ -6,28 +7,63 @@ import { supabase } from '@/lib/supabase';
 interface PostsContextType {
   posts: Post[];
   bookmarkedPosts: Post[];
-  addPost: (post: Omit<Post, 'id' | 'createdAt' | 'voteCount'>) => Promise<void>;
-  upvotePost: (postId: string) => void;
-  downvotePost: (postId: string) => void;
+
+  addPost: (
+    post: Omit<Post, 'id' | 'createdAt' | 'voteCount'>
+  ) => Promise<void>;
+
+  upvotePost: (postId: string) => Promise<void>;
+  downvotePost: (postId: string) => Promise<void>;
+
   deletePost: (postId: string) => Promise<void>;
   loadPosts: () => Promise<void>;
+
   toggleBookmark: (post: Post) => void;
   isBookmarked: (postId: string) => boolean;
 }
 
-const PostsContext = createContext<PostsContextType | undefined>(undefined);
+const PostsContext = createContext<PostsContextType | undefined>(
+  undefined
+);
 
 const generateId = () => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).substr(2, 9)
+  );
 };
 
-export function PostsProvider({ children }: { children: React.ReactNode }) {
+export function PostsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
 
+  /**
+   * Persist posts to local cache
+   */
+  const persistPosts = async (updatedPosts: Post[]) => {
+    try {
+      await AsyncStorage.setItem(
+        'cached_posts',
+        JSON.stringify(updatedPosts)
+      );
+    } catch (error) {
+      console.warn('Failed to cache posts:', error);
+    }
+  };
+
+  /**
+   * Load bookmarks
+   */
   const loadBookmarks = useCallback(async () => {
     try {
-      const stored = await AsyncStorage.getItem('bookmarked_posts');
+      const stored = await AsyncStorage.getItem(
+        'bookmarked_posts'
+      );
+
       if (stored) {
         setBookmarkedPosts(JSON.parse(stored));
       }
@@ -36,22 +72,23 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  /**
+   * Load posts
+   */
   const loadPosts = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('report')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', {
+          ascending: false,
+        });
 
-      if (error || !data || data.length === 0) {
-        const cached = await AsyncStorage.getItem('cached_posts');
-        if (cached) {
-          setPosts(JSON.parse(cached));
-        }
-        return;
+      if (error || !data) {
+        throw error;
       }
 
-      const formattedPosts = data.map((p: any) => ({
+      const formattedPosts: Post[] = data.map((p: any) => ({
         id: p.id,
         title: p.title,
         description: p.description,
@@ -64,102 +101,299 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
         createdAt: p.created_at,
         authorId: p.author_id,
       }));
+
       setPosts(formattedPosts);
-      await AsyncStorage.setItem('cached_posts', JSON.stringify(formattedPosts));
+
+      await persistPosts(formattedPosts);
     } catch (error) {
-      const cached = await AsyncStorage.getItem('cached_posts');
-      if (cached) {
-        setPosts(JSON.parse(cached));
+      console.warn(
+        'Failed to load from Supabase, using cache:',
+        error
+      );
+
+      try {
+        const cached = await AsyncStorage.getItem(
+          'cached_posts'
+        );
+
+        if (cached) {
+          setPosts(JSON.parse(cached));
+        }
+      } catch (cacheError) {
+        console.warn(
+          'Failed to load cached posts:',
+          cacheError
+        );
       }
     }
   }, []);
 
-  const addPost = useCallback(async (postData: Omit<Post, 'id' | 'createdAt' | 'voteCount'>) => {
-    const newPost: Post = {
-      ...postData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      voteCount: 0,
-    };
+  /**
+   * Add post
+   */
+  const addPost = useCallback(
+    async (
+      postData: Omit<
+        Post,
+        'id' | 'createdAt' | 'voteCount'
+      >
+    ) => {
+      const newPost: Post = {
+        ...postData,
+        id: generateId(),
+        createdAt: new Date().toISOString(),
+        voteCount: 0,
+      };
 
-    setPosts((prev) => {
-      const updated = [newPost, ...prev];
-      AsyncStorage.setItem('cached_posts', JSON.stringify(updated));
-      return updated;
-    });
+      // optimistic update
+      setPosts((prev) => {
+        const updated = [newPost, ...prev];
 
-    try {
-      const { error } = await supabase.from('report').insert({
-        id: newPost.id,
-        title: newPost.title,
-        description: newPost.description,
-        image_uri: newPost.imageUri || null,
-        latitude: newPost.latitude,
-        longitude: newPost.longitude,
-        location_label: newPost.locationLabel,
-        severity: newPost.severity,
-        vote_count: newPost.voteCount,
-        author_id: newPost.authorId,
+        persistPosts(updated);
+
+        return updated;
       });
 
-      if (error) {
-        console.warn('Supabase save error:', error);
+      try {
+        const { error } = await supabase
+          .from('report')
+          .insert({
+            id: newPost.id,
+            title: newPost.title,
+            description: newPost.description,
+            image_uri: newPost.imageUri || null,
+            latitude: newPost.latitude,
+            longitude: newPost.longitude,
+            location_label: newPost.locationLabel,
+            severity: newPost.severity,
+            vote_count: newPost.voteCount,
+            author_id: newPost.authorId,
+          });
+
+        if (error) {
+          throw error;
+        }
+      } catch (error) {
+        console.warn(
+          'Failed to save post to Supabase:',
+          error
+        );
       }
-    } catch (error) {
-      console.warn('Failed to save to Supabase:', error);
-    }
-  }, []);
+    },
+    []
+  );
 
-  const upvotePost = useCallback((postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId ? { ...post, voteCount: post.voteCount + 1 } : post
-      )
-    );
-  }, []);
+  /**
+   * Upvote post
+   */
+  const upvotePost = useCallback(
+    async (postId: string) => {
+      let previousVoteCount = 0;
+      let newVoteCount = 0;
 
-  const downvotePost = useCallback((postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId ? { ...post, voteCount: post.voteCount - 1 } : post
-      )
-    );
-  }, []);
+      // optimistic update
+      setPosts((prev) => {
+        const updated = prev.map((post) => {
+          if (post.id === postId) {
+            previousVoteCount = post.voteCount;
+            newVoteCount = post.voteCount + 1;
 
-  const deletePost = useCallback(async (postId: string) => {
-    setPosts((prev) => {
-      const updated = prev.filter((p) => p.id !== postId);
-      AsyncStorage.setItem('cached_posts', JSON.stringify(updated));
-      return updated;
-    });
-    setBookmarkedPosts((prev) => {
-      const updated = prev.filter((p) => p.id !== postId);
-      AsyncStorage.setItem('bookmarked_posts', JSON.stringify(updated));
-      return updated;
-    });
+            return {
+              ...post,
+              voteCount: newVoteCount,
+            };
+          }
 
-    try {
-      await supabase.from('report').delete().eq('id', postId);
-    } catch (error) {
-      console.warn('Failed to delete from Supabase:', error);
-    }
-  }, []);
+          return post;
+        });
 
+        persistPosts(updated);
+
+        return updated;
+      });
+
+      try {
+        const { error } = await supabase
+          .from('report')
+          .update({
+            vote_count: newVoteCount,
+          })
+          .eq('id', postId);
+
+        if (error) {
+          throw error;
+        }
+      } catch (error) {
+        console.warn('Failed to upvote:', error);
+
+        // rollback
+        setPosts((prev) => {
+          const updated = prev.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  voteCount: previousVoteCount,
+                }
+              : post
+          );
+
+          persistPosts(updated);
+
+          return updated;
+        });
+      }
+    },
+    []
+  );
+
+  /**
+   * Downvote post
+   */
+  const downvotePost = useCallback(
+    async (postId: string) => {
+      let previousVoteCount = 0;
+      let newVoteCount = 0;
+
+      // optimistic update
+      setPosts((prev) => {
+        const updated = prev.map((post) => {
+          if (post.id === postId) {
+            previousVoteCount = post.voteCount;
+            newVoteCount = post.voteCount - 1;
+
+            return {
+              ...post,
+              voteCount: newVoteCount,
+            };
+          }
+
+          return post;
+        });
+
+        persistPosts(updated);
+
+        return updated;
+      });
+
+      try {
+        const { error } = await supabase
+          .from('report')
+          .update({
+            vote_count: newVoteCount,
+          })
+          .eq('id', postId);
+
+        if (error) {
+          throw error;
+        }
+      } catch (error) {
+        console.warn('Failed to downvote:', error);
+
+        // rollback
+        setPosts((prev) => {
+          const updated = prev.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  voteCount: previousVoteCount,
+                }
+              : post
+          );
+
+          persistPosts(updated);
+
+          return updated;
+        });
+      }
+    },
+    []
+  );
+
+  /**
+   * Delete post
+   */
+  const deletePost = useCallback(
+    async (postId: string) => {
+      // optimistic update
+      setPosts((prev) => {
+        const updated = prev.filter(
+          (p) => p.id !== postId
+        );
+
+        persistPosts(updated);
+
+        return updated;
+      });
+
+      setBookmarkedPosts((prev) => {
+        const updated = prev.filter(
+          (p) => p.id !== postId
+        );
+
+        AsyncStorage.setItem(
+          'bookmarked_posts',
+          JSON.stringify(updated)
+        );
+
+        return updated;
+      });
+
+      try {
+        const { error } = await supabase
+          .from('report')
+          .delete()
+          .eq('id', postId);
+
+        if (error) {
+          throw error;
+        }
+      } catch (error) {
+        console.warn(
+          'Failed to delete from Supabase:',
+          error
+        );
+      }
+    },
+    []
+  );
+
+  /**
+   * Toggle bookmark
+   */
   const toggleBookmark = useCallback((post: Post) => {
     setBookmarkedPosts((prev) => {
-      const isAlreadyBookmarked = prev.some((p) => p.id === post.id);
+      const isAlreadyBookmarked = prev.some(
+        (p) => p.id === post.id
+      );
+
       const updated = isAlreadyBookmarked
         ? prev.filter((p) => p.id !== post.id)
         : [...prev, post];
-      AsyncStorage.setItem('bookmarked_posts', JSON.stringify(updated));
+
+      AsyncStorage.setItem(
+        'bookmarked_posts',
+        JSON.stringify(updated)
+      );
+
       return updated;
     });
   }, []);
 
-  const isBookmarked = useCallback((postId: string) => {
-    return bookmarkedPosts.some((p) => p.id === postId);
-  }, [bookmarkedPosts]);
+  /**
+   * Check if bookmarked
+   */
+  const isBookmarked = useCallback(
+    (postId: string) => {
+      return bookmarkedPosts.some(
+        (p) => p.id === postId
+      );
+    },
+    [bookmarkedPosts]
+  );
 
+  /**
+   * Initial load
+   */
   useEffect(() => {
     loadPosts();
     loadBookmarks();
@@ -186,8 +420,12 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
 
 export function usePosts() {
   const context = useContext(PostsContext);
+
   if (!context) {
-    throw new Error('usePosts must be used within a PostsProvider');
+    throw new Error(
+      'usePosts must be used within a PostsProvider'
+    );
   }
+
   return context;
 }

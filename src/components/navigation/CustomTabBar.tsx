@@ -67,12 +67,12 @@ export default function CustomTabBar() {
               <MaterialIcons
                 name={tab.iconName}
                 size={active ? TabIconSizes.active : TabIconSizes.default}
-                color={active ? colors.primary : colors.textSecondary}
+                color={active ? colors.accent : colors.textSecondary}
               />
               <View
                 style={[
                   styles.activeIndicator,
-                  active && { backgroundColor: colors.primary },
+                  active && { backgroundColor: colors.accent },
                 ]}
               />
             </TouchableOpacity>
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
       },
     }),
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(253, 190, 52, 0.2)',
   },
   tab: {
     flex:1,
@@ -142,6 +142,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.accent,
     ...Platform.select({
       ios: {
         shadowColor: colors.primary,
