@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Alert, ScrollView, Image, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/providers/auth-provider';
@@ -86,10 +87,10 @@ export default function ProfileTab() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profile Info</Text>
           <AppTextInput
-            label="Nickname"
+            label="Full name"
             value={nickname}
             onChangeText={setNickname}
-            placeholder="Enter nickname"
+            placeholder="Enter full name"
           />
         </View>
 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Text, Image, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Image, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePosts } from '@/providers/posts-provider';
 import { useAuth } from '@/providers/auth-provider';

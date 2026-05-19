@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, SafeAreaView } from 'react-native';
+import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePosts } from '@/providers/posts-provider';
 import { PostCard } from '@/components/feed/PostCard';
 import { colors, spacing } from '@/theme/tokens';

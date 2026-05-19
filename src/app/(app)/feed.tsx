@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { usePosts } from '@/providers/posts-provider';
 import { PostCard } from '@/components/feed/PostCard';

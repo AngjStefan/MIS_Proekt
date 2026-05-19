@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { View, StyleSheet, Text, Modal, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Text, Modal, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { MapScreen } from '@/features/map/MapScreen';
 import { usePosts } from '@/providers/posts-provider';

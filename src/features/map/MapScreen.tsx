@@ -87,8 +87,6 @@ const getMapHTML = (posts: Post[], selectedPostId: string | null, clusters: Clus
     var posts = ${JSON.stringify(posts)};
     var selectedId = ${JSON.stringify(selectedPostId)};
     var clusters = ${JSON.stringify(clusters)};
-    var tempMarker = null;
-
     function getColor(severity) {
       var c = {
         'low': '#22C55E',
@@ -140,18 +138,6 @@ const getMapHTML = (posts: Post[], selectedPostId: string | null, clusters: Clus
     map.on('click', function(e) {
       var lat = e.latlng.lat;
       var lng = e.latlng.lng;
-      
-      if (tempMarker) {
-        map.removeLayer(tempMarker);
-      }
-      
-      tempMarker = L.circleMarker([lat, lng], {
-        radius: 12,
-        color: '#14B8A6',
-        fillColor: '#14B8A6',
-        fillOpacity: 1,
-        weight: 3
-      }).addTo(map);
       
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapClick', lat: lat, lng: lng }));
     });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Image, SafeAreaView, Modal } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Image, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/providers/posts-provider';

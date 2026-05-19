@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   voteText: {
-    color: colors.textPrimary,
+    color: colors.white,
     fontSize: 14,
     fontWeight: '600',
     marginHorizontal: spacing.xs,
