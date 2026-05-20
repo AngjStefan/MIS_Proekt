@@ -1,99 +1,99 @@
-# UsIKTP-Proekt-Tim09
-Smart Risk &amp; Infrastructure Intelligence Platform is a community-driven app for reporting and analyzing city safety and infrastructure issues. It uses location-based deduplication and voting to prioritize problems, generating real-time safety zones and giving citizens and authorities clear insights via an interactive map and dashboard.
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# SafeParking
 
-# Getting Started
+A community-driven parking safety intelligence platform built with **React Native (Expo)**. Report, discover, and vote on parking-related safety issues in your area — displayed on an interactive map with AI-powered duplicate detection.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Tech Stack
 
-## Step 1: Start Metro
+- **Framework:** React Native (Expo SDK 55) with Expo Router
+- **Language:** TypeScript
+- **Backend:** Supabase (PostgreSQL + Auth)
+- **Map:** Leaflet.js / OpenStreetMap via WebView
+- **AI:** Google Gemini 2.5 Flash (duplicate report detection)
+- **Forms:** react-hook-form + Zod validation
+- **Persistence:** AsyncStorage (offline cache, bookmarks)
+- **Navigation:** Expo Router (file-based, tabs + stacks)
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Features
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **Explore Map** — Leaflet map with severity-colored markers and automatic clustering (300m radius)
+- **Feed** — Scrollable list of reports sorted newest-first
+- **Create Report** — Upload photos, set severity (Low/Medium/High/Critical), pick location on map
+- **AI Duplicate Detection** — Gemini checks nearby reports for duplicates before submission
+- **Voting** — Upvote/downvote reports to surface important issues
+- **Bookmarks** — Save reports locally via AsyncStorage
+- **User Profile** — Avatar, name editing, password change, report count
+- **Authentication** — Email/password via Supabase Auth
 
-```sh
-# Using npm
-npm start
+## Getting Started
 
-# OR using Yarn
-yarn start
-```
+### Prerequisites
 
-## Step 2: Build and run your app
+- Node.js >= 22.11.0
+- Expo CLI (`npx expo`)
+- Android Studio or Xcode (for emulators)
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### Setup
 
 ```sh
-bundle install
+git clone https://github.com/AngjStefan/MIS_Proekt
+cd MIS_Proekt
+npm install
 ```
 
-Then, and every time you update your native dependencies, run:
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+| Variable | Description |
+|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `EXPO_PUBLIC_GOOGLE_GEMINI_API_KEY` | Google Gemini API key (for duplicate detection) |
+
+### Running
 
 ```sh
-bundle exec pod install
+npm start        # Start Expo dev server
+npm run android  # Run on Android
+npm run ios      # Run on iOS
+npm run web      # Run in browser
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+### Lint & Test
 
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm run lint
+npm run test
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Project Structure
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```
+src/
+├── app/              # Expo Router screens
+│   ├── (app)/        # Main app tabs (explore, feed, create, profile, bookmark)
+│   │   └── post/[id] # Post detail screen
+│   └── (auth)/       # Auth screens (login, register, forgot-password)
+├── components/       # Reusable UI
+│   ├── ui/           # Primitives (button, input, modal, etc.)
+│   ├── map/          # Map overlay components
+│   ├── feed/         # PostCard component
+│   └── navigation/   # CustomTabBar
+├── features/         # Feature-level components
+│   └── map/          # MapScreen (Leaflet WebView)
+├── providers/        # React Context (AuthProvider, PostsProvider)
+├── hooks/            # Custom hooks
+├── lib/              # Supabase client, Gemini client, utilities
+├── types/            # TypeScript types
+├── validation/       # Zod schemas
+├── constants/        # Map config, icon mappings
+└── theme/            # Design tokens (colors, spacing, typography)
+```
 
-## Step 3: Modify your app
+## Database
 
-Now that you have successfully run the app, let's make changes!
+Uses a Supabase `report` table with columns: `id`, `title`, `description`, `image_uri`, `latitude`, `longitude`, `location_label`, `severity`, `vote_count`, `created_at`, `author_id`.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## License
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+See [LICENSE](./LICENSE).
